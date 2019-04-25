@@ -65,6 +65,20 @@ function Add-CertToGit
 		[string]
 		$CrtPath
 	)
+
+	if(Test-Path 'C:\Program Files\Git')
+	{
+		$x64 = $true
+	}
+	if(Test-Path 'C:\Program Files (x86)\Git')
+	{
+		$x32 = $true
+	}
+
+	if( -not $x32 -and -not $x64)
+	{
+		throw 'This command requires Git'
+	}
 	
 	if($CrtPath)
 	{
@@ -72,11 +86,11 @@ function Add-CertToGit
 	}
 	else
 	{
-        if(Test-Path -Path 'C:\Program Files\Git')
+        if($x64)
         {
             $crtInfo = Copy-Item 'C:\Program Files\Git\mingw64\ssl\certs\ca-bundle.crt' -Destination $Env:USERPROFILE -PassThru
         }
-        elseif(Test-Path -Path 'C:\Program Files (x86)\Git')
+        elseif($x32)
         {
             $crtInfo = Copy-Item 'C:\Program Files (x86)\Git\mingw32\ssl\certs\ca-bundle.crt' -Destination $Env:USERPROFILE -PassThru
         }       
@@ -85,5 +99,5 @@ function Add-CertToGit
 	$rootBase64 = [convert]::ToBase64String($Certificate.RawData)
     $certEnd = '-----END CERTIFICATE-----'
     Add-Content -Path $crtInfo.FullName -Value "`n$certBegin`n$rootBase64`n$certEnd" -NoNewline
-    #git config --global http.sslCAInfo $crtInfo.FullName
+    git config --global http.sslCAInfo $crtInfo.FullName
 }
