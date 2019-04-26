@@ -101,3 +101,28 @@ function Add-CertToGit
     Add-Content -Path $crtInfo.FullName -Value "`n$certBegin`n$rootBase64`n$certEnd" -NoNewline
     git config --global http.sslCAInfo $crtInfo.FullName
 }
+
+<#
+    .SYNOPSIS
+	    Ensures that environment Path variables are unique and properly formatted
+	
+	.EXAMPLE
+	    $null = Optimize-PathVariables
+#>
+function Optimize-PathVariables
+{
+	# System
+	$vars = [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::Machine)
+	$pathSplit = $vars -split ';' | Foreach-Object {$_.trim()} | Where-Object {$_} | Sort-Object -Unique
+	[Environment]::SetEnvironmentVariable('Path', $pathSplit -join ';', [System.EnvironmentVariableTarget]::Machine)
+
+	# User	
+	$vars = [Environment]::GetEnvironmentVariable('Path', [EnvironmentVariableTarget]::User)
+	$pathSplit = $vars -split ';' | Foreach-Object {$_.trim()} | Where-Object {$_} | Sort-Object -Unique
+	[Environment]::SetEnvironmentVariable('Path', $pathSplit -join ';', [System.EnvironmentVariableTarget]::User)
+
+	# Session
+	$pathVar = $env:Path
+	$pathSplit = $pathVar -split ';' | Foreach-Object {$_.trim()} | Where-Object {$_} | Sort-Object -Unique
+	$env:Path = $pathSplit -join ';'
+}
