@@ -134,11 +134,11 @@ function Optimize-PathVariables
     .PARAMETER  RepoRootPath
         The root path to the repository under test
 
-    .PARAMETER  targetFramework
+    .PARAMETER  TargetFramework
         The destination framework for the upgrade
     
     .EXAMPLE
-        $uP = Get-UnsupportedPackages -
+        $uP = Get-UnsupportedPackages -RepoRootPath 'C:\MyRepo' -TargetFramework 'netstandard2.0'
 #>
 function Get-UnsupportedPackages
 {
@@ -157,6 +157,7 @@ function Get-UnsupportedPackages
     
     #Find all package.configs in the repo
     $packageConfigs = (Get-ChildItem $RepoRootPath -recurse | Where-Object {$_.Name -eq "Packages.config"}).FullName
+
     
     #Get package ids (e.g. Serilog.2.7.1) to build folder paths from
     $packageIds = ($packageConfigs | ForEach-Object {[xml](Get-Content $_) | ForEach-Object {$_.packages.ChildNodes | ForEach-Object {"$($_.id).$($_.version)"}}}) | select -Unique
