@@ -126,3 +126,46 @@ function Optimize-PathVariables
     $pathSplit = $pathVar -split ';' | Foreach-Object {$_.trim()} | Where-Object {$_} | Sort-Object -Unique
     $env:Path = $pathSplit -join ';'
 }
+
+<#
+    .SYNOPSIS
+        Returns current packages that do not support the target framework
+
+    .PARAMETER  repoRootPath
+        The root path to the repository under test
+
+    .PARAMETER  targetFramework
+        The destination framework for the upgrade
+    
+    .EXAMPLE
+        $uP = Get-UnsupportedPackages -
+#>
+function Get-UnsupportedPackages
+{
+    param
+    (
+        [Parameter(Mandatory = $true)]
+        $repoRootPath,
+
+        [Parameter(Mandatory = $true)]
+        [string]
+        $targetFramework
+    )
+
+    #Find the Packages Folder
+    $packagesFolder = (Get-ChildItem $repoRootPath -recurse | Where-Object {$_.PSIsContainer -eq $true -and $_.Name -eq "Packages"}).FullName
+    
+    #Find all package.configs in the repo
+    $packageConfigs = (Get-ChildItem $repoRootPath -recurse | Where-Object {$_.Name -eq "Packages.config"}).FullName
+    
+    #Get package ids (e.g. Serilog.2.7.1) to build folder paths from
+    $packageIds = ($packageConfigs | ForEach-Object {[xml](Get-Content $_) | ForEach-Object {$_.packages.ChildNodes | ForEach-Object {"$($_.id).$($_.version)"}}}) | select -Unique
+    
+    #Return packages that don't support the target framework
+    $packageIds | ForEach-Object -Process {
+        if(Test-Path -Path (Join-Path -Path $packagesFolder -ChildPath $_)) 
+        {
+            if(-not (Test-Path -Path (Join-Path -Path $packagesFolder -ChildPath "$($_)\lib\$targetFramework"))) { $_}
+        }
+    }
+}
